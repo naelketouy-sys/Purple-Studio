@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rhythm Clicker - Purple Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #bc13fe;
+            --secondary: #ff006e;
+            --accent: #7d2ae8;
+            --dark: #0f051a;
+            --darker: #07020d;
+            --text: #f0e6ff;
+            --perfect: #00ff88;
+            --good: #ffd700;
+            --miss: #ff006e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--darker);
+            color: var(--text);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(125, 42, 232, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(255, 0, 110, 0.1) 0%, transparent 40%);
+            z-index: -1;
+            animation: bgPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes bgPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        #gameContainer {
+            text-align: center;
+            position: relative;
+            width: 90%;
+            max-width: 900px;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, #fff, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: titlePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes titlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        #stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            gap: 15px;
+        }
+
+        .stat-box {
+            background: rgba(188, 19, 254, 0.2);
+            border: 2px solid var(--primary);
+            border-radius: 15px;
+            padding: 15px 25px;
+            flex: 1;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            color: var(--primary);
+            text-shadow: 0 0 10px var(--primary);
+        }
+
+        #gameArea {
+            position: relative;
+            height: 500px;
+            background: rgba(15, 5, 26, 0.8);
+            border: 3px solid var(--primary);
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 50px rgba(188, 19, 254, 0.4);
+            overflow: hidden;
+        }
+
+        #beatVisualizer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            padding: 20px;
+        }
+
+        .beat-bar {
+            width: 8%;
+            background: linear-gradient(to top, var(--primary), var(--secondary));
+            border-radius: 10px 10px 0 0;
+            transition: height 0.1s ease;
+            box-shadow: 0 0 20px var(--primary);
+        }
+
+        #hitZone {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 200px;
+            border: 5px solid var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle, rgba(188, 19, 254, 0.3), transparent);
+            box-shadow: 
+                0 0 30px var(--primary),
+                inset 0 0 30px rgba(188, 19, 254, 0.3);
+            animation: zonePulse 1s ease-in-out infinite;
+        }
+
+        @keyframes zonePulse {
+            0%, 100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 30px var(--primary), inset 0 0 30px rgba(188, 19, 254, 0.3); }
+            50% { transform: translateX(-50%) scale(1.05); box-shadow: 0 0 50px var(--primary), inset 0 0 50px rgba(188, 19, 254, 0.5); }
+        }
+
+        #hitZone::before {
+            content: '🎯';
+            font-size: 4rem;
+            filter: drop-shadow(0 0 10px var(--primary));
+        }
+
+        .target {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--secondary), var(--primary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 0 30px var(--secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            animation: targetFloat 2s ease-in-out infinite;
+        }
+
+        @keyframes targetFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        .target:hover {
+            transform: scale(1.2);
+        }
+
+        .target.hit {
+            animation: targetHit 0.5s ease forwards;
+        }
+
+        @keyframes targetHit {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        #feedback {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            font-weight: bold;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .feedback-perfect {
+            color: var(--perfect);
+            text-shadow: 0 0 20px var(--perfect);
+            animation: feedbackPop 0.5s ease;
+        }
+
+        .feedback-good {
+            color: var(--good);
+            text-shadow: 0 0 20px var(--good);
+            animation: feedbackPop 0.5s ease;
+        }
+
+        .feedback-miss {
+            color: var(--miss);
+            text-shadow: 0 0 20px var(--miss);
+            animation: feedbackPop 0.5s ease;
+        }
+
+        @keyframes feedbackPop {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
+
+        #controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        button {
+            padding: 15px 30px;
+            background: var(--primary);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-family: 'Orbitron';
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: var(--secondary);
+            box-shadow: 0 0 20px var(--secondary);
+            transform: scale(1.05);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #difficultySelect {
+            padding: 15px;
+            background: rgba(26, 11, 46, 0.8);
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: 'Rajdhani';
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        #combo {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            color: var(--perfect);
+            text-shadow: 0 0 20px var(--perfect);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #combo.active {
+            opacity: 1;
+            animation: comboPulse 0.5s ease;
+        }
+
+        @keyframes comboPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        #progressBar {
+            width: 100%;
+            height: 10px;
+            background: rgba(26, 11, 46, 0.8);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        #progressFill {
+            height: 100%;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            width: 0%;
+            transition: width 0.1s linear;
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        #instructions {
+            font-size: 1.1rem;
+            opacity: 0.8;
+        }
+
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            animation: particleRise 1s ease-out forwards;
+        }
+
+        @keyframes particleRise {
+            to {
+                transform: translateY(-100px);
+                opacity: 0;
+            }
+        }
+
+        #gameOverScreen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .game-over-content {
+            background: rgba(15, 5, 26, 0.95);
+            padding: 50px;
+            border-radius: 20px;
+            border: 3px solid var(--primary);
+            box-shadow: 0 0 50px rgba(188, 19, 254, 0.6);
+            text-align: center;
+        }
+
+        .game-over-content h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            color: var(--secondary);
+            margin-bottom: 20px;
+        }
+
+        .game-over-stats {
+            margin: 30px 0;
+            font-size: 1.3rem;
+        }
+
+        .game-over-stat {
+            margin: 10px 0;
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            #gameArea { height: 400px; }
+            #hitZone { width: 150px; height: 150px; }
+            .target { width: 50px; height: 50px; font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <h1>🎵 RHYTHM CLICKER 🎵</h1>
+
+        <div id="stats">
+            <div class="stat-box">
+                <div class="stat-label">SCORE</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">PRÉCISION</div>
+                <div class="stat-value" id="accuracy">100%</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">RECORD</div>
+                <div class="stat-value" id="highScore">0</div>
+            </div>
+        </div>
+
+        <div id="progressBar">
+            <div id="progressFill"></div>
+        </div>
+
+        <div id="gameArea">
+            <div id="beatVisualizer">
+                <div class="beat-bar"></div>
+                <div class="beat-bar"></div>
+                <div class="beat-bar"></div>
+                <div class="beat-bar"></div>
+                <div class="beat-bar"></div>
+                <div class="beat-bar"></div>
+                <div class="beat-bar"></div>
+                <div class="beat-bar"></div>
+            </div>
+            <div id="hitZone"></div>
+            <div id="combo">x0 COMBO</div>
+            <div id="feedback"></div>
+        </div>
+
+        <div id="controls">
+            <select id="difficultySelect">
+                <option value="easy">Facile (60 sec)</option>
+                <option value="medium" selected>Moyen (60 sec)</option>
+                <option value="hard">Difficile (60 sec)</option>
+                <option value="insane">Démentiel (60 sec)</option>
+            </select>
+            <button id="startBtn" onclick="startGame()">▶️ DÉMARRER</button>
+            <button id="pauseBtn" onclick="togglePause()" disabled>⏸️ PAUSE</button>
+        </div>
+
+        <div id="instructions">
+            Clique sur les cibles au bon moment ! Plus tu es précis, plus tu gagnes de points ! 🎯
+        </div>
+    </div>
+
+    <div id="gameOverScreen">
+        <div class="game-over-content">
+            <h2>🎮 PARTIE TERMINÉE 🎮</h2>
+            <div class="game-over-stats">
+                <div class="game-over-stat">Score: <span id="finalScore">0</span></div>
+                <div class="game-over-stat">Précision: <span id="finalAccuracy">0%</span></div>
+                <div class="game-over-stat">Meilleur combo: <span id="finalCombo">0</span></div>
+                <div class="game-over-stat">Parfaits: <span id="finalPerfect">0</span> 🌟</div>
+            </div>
+            <button onclick="restart()">REJOUER</button>
+        </div>
+    </div>
+
+    <script>
+        let score = 0;
+        let highScore = localStorage.getItem('rhythmClickerHighScore') || 0;
+        let totalHits = 0;
+        let perfectHits = 0;
+        let goodHits = 0;
+        let misses = 0;
+        let combo = 0;
+        let maxCombo = 0;
+        let gameRunning = false;
+        let gamePaused = false;
+        let gameTime = 60;
+        let elapsedTime = 0;
+        let targets = [];
+        let difficulty = 'medium';
+        let spawnInterval;
+        let gameTimer;
+        let beatBars = document.querySelectorAll('.beat-bar');
+
+        document.getElementById('highScore').textContent = highScore;
+
+        const difficulties = {
+            easy: { spawnRate: 1500, targetSpeed: 3000 },
+            medium: { spawnRate: 1200, targetSpeed: 2500 },
+            hard: { spawnRate: 900, targetSpeed: 2000 },
+            insane: { spawnRate: 600, targetSpeed: 1500 }
+        };
+
+        function startGame() {
+            difficulty = document.getElementById('difficultySelect').value;
+            gameRunning = true;
+            gamePaused = false;
+            score = 0;
+            totalHits = 0;
+            perfectHits = 0;
+            goodHits = 0;
+            misses = 0;
+            combo = 0;
+            maxCombo = 0;
+            elapsedTime = 0;
+            targets = [];
+
+            updateStats();
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+            document.getElementById('difficultySelect').disabled = true;
+            
+            clearTargets();
+            startSpawning();
+            startTimer();
+            animateBeatBars();
+        }
+
+        function startSpawning() {
+            spawnInterval = setInterval(() => {
+                if (!gamePaused && gameRunning) {
+                    spawnTarget();
+                }
+            }, difficulties[difficulty].spawnRate);
+        }
+
+        function startTimer() {
+            gameTimer = setInterval(() => {
+                if (!gamePaused && gameRunning) {
+                    elapsedTime++;
+                    const progress = (elapsedTime / gameTime) * 100;
+                    document.getElementById('progressFill').style.width = progress + '%';
+                    
+                    if (elapsedTime >= gameTime) {
+                        endGame();
+                    }
+                }
+            }, 1000);
+        }
+
+        function spawnTarget() {
+            const gameArea = document.getElementById('gameArea');
+            const target = document.createElement('div');
+            target.className = 'target';
+            
+            const emojis = ['⭐', '💫', '✨', '🌟', '💥', '🔥', '⚡', '💜'];
+            target.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+            
+            const maxX = gameArea.offsetWidth - 80;
+            const maxY = gameArea.offsetHeight - 300;
+            
+            target.style.left = Math.random() * maxX + 20 + 'px';
+            target.style.top = Math.random() * maxY + 20 + 'px';
+            
+            const spawnTime = Date.now();
+            target.dataset.spawnTime = spawnTime;
+            
+            target.addEventListener('click', () => hitTarget(target, spawnTime));
+            
+            gameArea.appendChild(target);
+            targets.push(target);
+            
+            setTimeout(() => {
+                if (target.parentNode && !target.classList.contains('hit')) {
+                    missTarget(target);
+                }
+            }, difficulties[difficulty].targetSpeed);
+        }
+
+        function hitTarget(target, spawnTime) {
+            if (!gameRunning || gamePaused || target.classList.contains('hit')) return;
+            
+            target.classList.add('hit');
+            const hitTime = Date.now();
+            const timing = hitTime - spawnTime;
+            const maxTime = difficulties[difficulty].targetSpeed;
+            const timingRatio = timing / maxTime;
+            
+            let points = 0;
+            let feedbackText = '';
+            let feedbackClass = '';
+            
+            if (timingRatio < 0.3) {
+                points = 100;
+                feedbackText = '🌟 PARFAIT !';
+                feedbackClass = 'feedback-perfect';
+                perfectHits++;
+                combo++;
+            } else if (timingRatio < 0.6) {
+                points = 50;
+                feedbackText = '✨ BIEN !';
+                feedbackClass = 'feedback-good';
+                goodHits++;
+                combo++;
+            } else {
+                points = 25;
+                feedbackText = '👌 OK';
+                feedbackClass = 'feedback-good';
+                goodHits++;
+                combo++;
+            }
+            
+            points *= (1 + combo * 0.1);
+            score += Math.floor(points);
+            totalHits++;
+            
+            if (combo > maxCombo) maxCombo = combo;
+            
+            showFeedback(feedbackText, feedbackClass);
+            updateCombo();
+            updateStats();
+            createParticles(target);
+            
+            setTimeout(() => target.remove(), 500);
+        }
+
+        function missTarget(target) {
+            if (!gameRunning || target.classList.contains('hit')) return;
+            
+            misses++;
+            combo = 0;
+            totalHits++;
+            
+            showFeedback('❌ RATÉ !', 'feedback-miss');
+            updateCombo();
+            updateStats();
+            
+            target.style.animation = 'targetHit 0.5s ease forwards';
+            setTimeout(() => target.remove(), 500);
+        }
+
+        function showFeedback(text, className) {
+            const feedback = document.getElementById('feedback');
+            feedback.textContent = text;
+            feedback.className = className;
+            feedback.style.opacity = '1';
+            
+            setTimeout(() => {
+                feedback.style.opacity = '0';
+            }, 500);
+        }
+
+        function updateCombo() {
+            const comboElement = document.getElementById('combo');
+            if (combo > 1) {
+                comboElement.textContent = `x${combo} COMBO 🔥`;
+                comboElement.classList.add('active');
+            } else {
+                comboElement.classList.remove('active');
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('score').textContent = score;
+            
+            const accuracy = totalHits > 0 ? Math.round(((perfectHits + goodHits) / totalHits) * 100) : 100;
+            document.getElementById('accuracy').textContent = accuracy + '%';
+            
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('rhythmClickerHighScore', highScore);
+                document.getElementById('highScore').textContent = highScore;
+            }
+        }
+
+        function createParticles(target) {
+            const rect = target.getBoundingClientRect();
+            const gameArea = document.getElementById('gameArea');
+            const gameRect = gameArea.getBoundingClientRect();
+            
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.textContent = '✨';
+                particle.style.left = (rect.left - gameRect.left + rect.width / 2) + 'px';
+                particle.style.top = (rect.top - gameRect.top + rect.height / 2) + 'px';
+                particle.style.transform = `translate(-50%, -50%) rotate(${Math.random() * 360}deg)`;
+                
+                gameArea.appendChild(particle);
+                
+                setTimeout(() => particle.remove(), 1000);
+            }
+        }
+
+        function animateBeatBars() {
+            setInterval(() => {
+                if (!gamePaused && gameRunning) {
+                    beatBars.forEach(bar => {
+                        const height = Math.random() * 80 + 20;
+                        bar.style.height = height + '%';
+                    });
+                }
+            }, 100);
+        }
+
+        function togglePause() {
+            gamePaused = !gamePaused;
+            document.getElementById('pauseBtn').textContent = gamePaused ? '▶️ REPRENDRE' : '⏸️ PAUSE';
+        }
+
+        function clearTargets() {
+            targets.forEach(target => target.remove());
+            targets = [];
+        }
+
+        function endGame() {
+            gameRunning = false;
+            clearInterval(spawnInterval);
+            clearInterval(gameTimer);
+            clearTargets();
+            
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalAccuracy').textContent = 
+                totalHits > 0 ? Math.round(((perfectHits + goodHits) / totalHits) * 100) + '%' : '0%';
+            document.getElementById('finalCombo').textContent = maxCombo;
+            document.getElementById('finalPerfect').textContent = perfectHits;
+            
+            document.getElementById('gameOverScreen').style.display = 'flex';
+        }
+
+        function restart() {
+            document.getElementById('gameOverScreen').style.display = 'none';
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('difficultySelect').disabled = false;
+            document.getElementById('progressFill').style.width = '0%';
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === ' ' && gameRunning) {
+                e.preventDefault();
+                togglePause();
+            }
+        });
+    </script>
+</body>
+</html>

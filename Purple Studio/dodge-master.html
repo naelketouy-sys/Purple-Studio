@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dodge Master - Purple Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #bc13fe;
+            --secondary: #ff006e;
+            --accent: #7d2ae8;
+            --dark: #0f051a;
+            --darker: #07020d;
+            --text: #f0e6ff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--darker);
+            color: var(--text);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(125, 42, 232, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(255, 0, 110, 0.1) 0%, transparent 40%);
+            z-index: -1;
+        }
+
+        #gameContainer {
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, #fff, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(188, 19, 254, 0.5);
+        }
+
+        #gameCanvas {
+            border: 3px solid var(--primary);
+            border-radius: 15px;
+            box-shadow: 0 0 50px rgba(188, 19, 254, 0.4);
+            background: rgba(0, 0, 0, 0.5);
+            display: block;
+            margin: 0 auto;
+        }
+
+        #score {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            margin-top: 20px;
+            color: var(--primary);
+            text-shadow: 0 0 10px var(--primary);
+        }
+
+        #instructions {
+            margin-top: 15px;
+            font-size: 1.2rem;
+            color: var(--text);
+            opacity: 0.8;
+        }
+
+        #gameOver {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(15, 5, 26, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 50px rgba(188, 19, 254, 0.6);
+            text-align: center;
+            z-index: 10;
+        }
+
+        #gameOver h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            color: var(--secondary);
+            margin-bottom: 20px;
+        }
+
+        #finalScore {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-bottom: 30px;
+        }
+
+        #restartBtn {
+            padding: 15px 40px;
+            background: var(--primary);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-family: 'Orbitron';
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        #restartBtn:hover {
+            background: var(--secondary);
+            box-shadow: 0 0 20px var(--secondary);
+            transform: scale(1.05);
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particleFloat 3s ease-out forwards;
+        }
+
+        @keyframes particleFloat {
+            to {
+                transform: translateY(-100px) scale(0);
+                opacity: 0;
+            }
+        }
+
+        #highScore {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            color: #ffd700;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <h1>⚡ DODGE MASTER ⚡</h1>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="score">Score: 0</div>
+        <div id="highScore">🏆 Record: 0</div>
+        <div id="instructions">Déplace-toi avec les flèches ← → ou clique/touche l'écran</div>
+        
+        <div id="gameOver">
+            <h2>💀 GAME OVER 💀</h2>
+            <div id="finalScore"></div>
+            <button id="restartBtn">REJOUER</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const highScoreElement = document.getElementById('highScore');
+        const gameOverDiv = document.getElementById('gameOver');
+        const finalScoreElement = document.getElementById('finalScore');
+        const restartBtn = document.getElementById('restartBtn');
+
+        let gameRunning = false;
+        let score = 0;
+        let highScore = localStorage.getItem('dodgeMasterHighScore') || 0;
+        highScoreElement.textContent = `🏆 Record: ${highScore}`;
+
+        // Player
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height - 60,
+            width: 40,
+            height: 40,
+            speed: 8,
+            dx: 0,
+            color: '#bc13fe'
+        };
+
+        // Obstacles
+        let obstacles = [];
+        let obstacleSpeed = 3;
+        let obstacleFrequency = 60;
+        let frameCount = 0;
+
+        // Particles
+        let particles = [];
+
+        // Controls
+        let keys = {};
+        let mouseX = null;
+        let touchX = null;
+
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            touchX = e.touches[0].clientX - rect.left;
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            touchX = e.touches[0].clientX - rect.left;
+        });
+
+        function createObstacle() {
+            const size = 20 + Math.random() * 40;
+            obstacles.push({
+                x: Math.random() * (canvas.width - size),
+                y: -size,
+                width: size,
+                height: size,
+                speed: obstacleSpeed + Math.random() * 2,
+                color: `hsl(${Math.random() * 60 + 280}, 100%, 60%)`
+            });
+        }
+
+        function createParticle(x, y, color) {
+            for (let i = 0; i < 8; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    color: color,
+                    life: 30
+                });
+            }
+        }
+
+        function updatePlayer() {
+            // Keyboard controls
+            if (keys['ArrowLeft']) player.dx = -player.speed;
+            else if (keys['ArrowRight']) player.dx = player.speed;
+            else player.dx = 0;
+
+            // Mouse control
+            if (mouseX !== null) {
+                const targetX = mouseX - player.width / 2;
+                const diff = targetX - player.x;
+                player.x += diff * 0.2;
+                player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+            } else if (touchX !== null) {
+                const targetX = touchX - player.width / 2;
+                const diff = targetX - player.x;
+                player.x += diff * 0.2;
+                player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+            } else {
+                player.x += player.dx;
+                player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+            }
+        }
+
+        function updateObstacles() {
+            obstacles.forEach((obs, index) => {
+                obs.y += obs.speed;
+
+                // Check collision
+                if (player.x < obs.x + obs.width &&
+                    player.x + player.width > obs.x &&
+                    player.y < obs.y + obs.height &&
+                    player.y + player.height > obs.y) {
+                    gameOver();
+                }
+
+                // Remove off-screen obstacles and add score
+                if (obs.y > canvas.height) {
+                    obstacles.splice(index, 1);
+                    score++;
+                    scoreElement.textContent = `Score: ${score}`;
+                    
+                    // Increase difficulty
+                    if (score % 10 === 0) {
+                        obstacleSpeed += 0.3;
+                        obstacleFrequency = Math.max(30, obstacleFrequency - 2);
+                    }
+                }
+            });
+        }
+
+        function updateParticles() {
+            particles.forEach((p, index) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                if (p.life <= 0) {
+                    particles.splice(index, 1);
+                }
+            });
+        }
+
+        function drawPlayer() {
+            // Player glow
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = player.color;
+            
+            // Player body
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            
+            // Player highlight
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.fillRect(player.x, player.y, player.width, 10);
+            
+            ctx.shadowBlur = 0;
+        }
+
+        function drawObstacles() {
+            obstacles.forEach(obs => {
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = obs.color;
+                ctx.fillStyle = obs.color;
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                
+                // Highlight
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height / 4);
+                
+                ctx.shadowBlur = 0;
+            });
+        }
+
+        function drawParticles() {
+            particles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life / 30;
+                ctx.fillRect(p.x, p.y, 4, 4);
+                ctx.globalAlpha = 1;
+            });
+        }
+
+        function drawBackground() {
+            // Grid effect
+            ctx.strokeStyle = 'rgba(188, 19, 254, 0.1)';
+            ctx.lineWidth = 1;
+            
+            for (let i = 0; i < canvas.width; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, canvas.height);
+                ctx.stroke();
+            }
+            
+            for (let i = 0; i < canvas.height; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(canvas.width, i);
+                ctx.stroke();
+            }
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            drawBackground();
+            
+            updatePlayer();
+            updateObstacles();
+            updateParticles();
+            
+            drawParticles();
+            drawObstacles();
+            drawPlayer();
+
+            frameCount++;
+            if (frameCount % obstacleFrequency === 0) {
+                createObstacle();
+            }
+
+            // Trail effect
+            if (frameCount % 3 === 0) {
+                createParticle(player.x + player.width / 2, player.y + player.height, player.color);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+            gameRunning = true;
+            score = 0;
+            obstacles = [];
+            particles = [];
+            obstacleSpeed = 3;
+            obstacleFrequency = 60;
+            frameCount = 0;
+            player.x = canvas.width / 2;
+            scoreElement.textContent = 'Score: 0';
+            gameOverDiv.style.display = 'none';
+            gameLoop();
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            
+            // Create explosion
+            for (let i = 0; i < 50; i++) {
+                createParticle(player.x + player.width / 2, player.y + player.height / 2, '#ff006e');
+            }
+            
+            // Update high score
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('dodgeMasterHighScore', highScore);
+                highScoreElement.textContent = `🏆 Record: ${highScore}`;
+                finalScoreElement.textContent = `🎉 NOUVEAU RECORD ! 🎉\nScore: ${score}`;
+            } else {
+                finalScoreElement.textContent = `Score: ${score}\nRecord: ${highScore}`;
+            }
+            
+            gameOverDiv.style.display = 'block';
+        }
+
+        restartBtn.addEventListener('click', startGame);
+
+        // Start first game
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning && (e.key === ' ' || e.key === 'Enter')) {
+                startGame();
+            }
+        }, { once: true });
+
+        // Auto-start after 2 seconds
+        setTimeout(() => {
+            if (!gameRunning) startGame();
+        }, 2000);
+    </script>
+</body>
+</html>

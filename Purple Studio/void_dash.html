@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Void Dash - Purple Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: #07020d;
+            color: #f0e6ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(188, 19, 254, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(255, 0, 110, 0.15) 0%, transparent 50%);
+            z-index: -1;
+            animation: bgPulse 5s ease-in-out infinite;
+        }
+
+        @keyframes bgPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .game-container {
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #bc13fe, #ff006e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 40px rgba(188, 19, 254, 0.8);
+            animation: titleGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.3); }
+        }
+
+        .subtitle {
+            color: #a692b0;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            letter-spacing: 3px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            background: rgba(26, 11, 46, 0.8);
+            padding: 12px 25px;
+            border-radius: 15px;
+            border: 2px solid #bc13fe;
+            box-shadow: 0 5px 20px rgba(188, 19, 254, 0.3);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #a692b0;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            color: #bc13fe;
+            text-shadow: 0 0 10px #bc13fe;
+        }
+
+        canvas {
+            border: 3px solid #bc13fe;
+            border-radius: 10px;
+            background: #0f051a;
+            box-shadow: 0 0 40px rgba(188, 19, 254, 0.6), inset 0 0 30px rgba(188, 19, 254, 0.1);
+            display: block;
+            margin: 0 auto 20px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button {
+            font-family: 'Orbitron', sans-serif;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #bc13fe, #ff006e);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 5px 20px rgba(188, 19, 254, 0.4);
+            font-size: 1rem;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(188, 19, 254, 0.6);
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(7, 2, 13, 0.98);
+            padding: 50px;
+            border-radius: 20px;
+            border: 3px solid #ff006e;
+            box-shadow: 0 0 60px rgba(255, 0, 110, 0.8);
+            display: none;
+            z-index: 100;
+            animation: gameOverAnim 0.5s ease-out;
+        }
+
+        @keyframes gameOverAnim {
+            from { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+            to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        .game-over h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            color: #ff006e;
+            text-shadow: 0 0 20px #ff006e;
+            margin-bottom: 20px;
+        }
+
+        .game-over p {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+        }
+
+        .instructions {
+            background: rgba(26, 11, 46, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #7d2ae8;
+            margin-top: 20px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .instructions h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: #bc13fe;
+            margin-bottom: 10px;
+        }
+
+        .instructions p {
+            color: #a692b0;
+            line-height: 1.6;
+        }
+
+        .difficulty {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .difficulty button {
+            padding: 10px 20px;
+            font-size: 0.9rem;
+        }
+
+        .difficulty button.active {
+            background: linear-gradient(135deg, #00ff88, #00aaff);
+        }
+
+        .start-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            color: #bc13fe;
+            text-shadow: 0 0 30px #bc13fe;
+            animation: blink 1.5s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🌀 VOID DASH</h1>
+        <p class="subtitle">PURPLE STUDIO</p>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Distance</div>
+                <div class="stat-value" id="distance">0m</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Record</div>
+                <div class="stat-value" id="bestDistance">0m</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Tentatives</div>
+                <div class="stat-value" id="attempts">0</div>
+            </div>
+        </div>
+
+        <div class="difficulty">
+            <button onclick="setDifficulty('easy')" id="easyBtn" class="active">FACILE</button>
+            <button onclick="setDifficulty('normal')" id="normalBtn">NORMAL</button>
+            <button onclick="setDifficulty('hard')" id="hardBtn">DIFFICILE</button>
+        </div>
+
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+        <div class="start-message" id="startMessage">
+            APPUYEZ SUR ESPACE POUR COMMENCER
+        </div>
+
+        <div class="controls">
+            <button onclick="startGame()">▶ DÉMARRER</button>
+            <button onclick="resetGame()">🔄 RESTART</button>
+        </div>
+
+        <div class="instructions">
+            <h3>🎮 COMMENT JOUER</h3>
+            <p>
+                <strong>ESPACE</strong>, <strong>CLIC</strong> ou <strong>↑</strong> pour sauter !<br><br>
+                🚀 Ton cube avance automatiquement dans le VOID<br>
+                ⚠️ Évite les pics violets mortels !<br>
+                💎 Collectionne les gemmes pour augmenter ton score<br>
+                🔥 Plus tu vas loin, plus c'est rapide et difficile !<br><br>
+                <strong>Survie = Combo = Score multiplié !</strong>
+            </p>
+        </div>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <h2>💀 CRASH!</h2>
+        <p>Distance parcourue : <span id="finalDistance" style="color: #bc13fe; font-family: 'Orbitron';"></span></p>
+        <p>Gemmes collectées : <span id="finalGems" style="color: #00ff88; font-family: 'Orbitron';"></span></p>
+        <button onclick="resetGame()">REJOUER</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Variables du jeu
+        let player = {
+            x: 100,
+            y: canvas.height - 150,
+            width: 30,
+            height: 30,
+            velocityY: 0,
+            jumping: false,
+            rotation: 0
+        };
+
+        let obstacles = [];
+        let gems = [];
+        let particles = [];
+        let distance = 0;
+        let bestDistance = localStorage.getItem('voidDashBest') || 0;
+        let attempts = localStorage.getItem('voidDashAttempts') || 0;
+        let gameLoop;
+        let gameSpeed = 5;
+        let difficulty = 'easy';
+        let obstacleSpawnRate = 100;
+        let frameCount = 0;
+        let gemsCollected = 0;
+        let combo = 0;
+
+        const gravity = 0.8;
+        const jumpForce = -15;
+        const groundY = canvas.height - 100;
+
+        document.getElementById('bestDistance').textContent = Math.floor(bestDistance) + 'm';
+        document.getElementById('attempts').textContent = attempts;
+
+        // Contrôles
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                e.preventDefault(); // Empêche le scroll de la page
+                
+                // Si le jeu n'est pas lancé, le démarrer
+                if (!gameLoop) {
+                    startGame();
+                }
+                
+                // Sinon, sauter
+                jump();
+            }
+        });
+
+        canvas.addEventListener('click', () => {
+            // Si le jeu n'est pas lancé, le démarrer
+            if (!gameLoop) {
+                startGame();
+            }
+            jump();
+        });
+
+        function jump() {
+            if (!player.jumping) {
+                player.velocityY = jumpForce;
+                player.jumping = true;
+            }
+        }
+
+        function setDifficulty(level) {
+            difficulty = level;
+            document.querySelectorAll('.difficulty button').forEach(btn => btn.classList.remove('active'));
+            
+            if (level === 'easy') {
+                obstacleSpawnRate = 100;
+                gameSpeed = 5;
+                document.getElementById('easyBtn').classList.add('active');
+            } else if (level === 'normal') {
+                obstacleSpawnRate = 80;
+                gameSpeed = 6;
+                document.getElementById('normalBtn').classList.add('active');
+            } else if (level === 'hard') {
+                obstacleSpawnRate = 60;
+                gameSpeed = 7;
+                document.getElementById('hardBtn').classList.add('active');
+            }
+        }
+
+        function startGame() {
+            if (!gameLoop) {
+                document.getElementById('startMessage').style.display = 'none';
+                gameLoop = requestAnimationFrame(update);
+            }
+        }
+
+        function resetGame() {
+            cancelAnimationFrame(gameLoop);
+            gameLoop = null;
+            
+            player.y = groundY - player.height;
+            player.velocityY = 0;
+            player.jumping = false;
+            player.rotation = 0;
+            
+            obstacles = [];
+            gems = [];
+            particles = [];
+            distance = 0;
+            frameCount = 0;
+            gemsCollected = 0;
+            combo = 0;
+            
+            attempts++;
+            localStorage.setItem('voidDashAttempts', attempts);
+            document.getElementById('attempts').textContent = attempts;
+            document.getElementById('distance').textContent = '0m';
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('startMessage').style.display = 'block';
+            
+            draw();
+        }
+
+        function update() {
+            frameCount++;
+            
+            // Gravité
+            player.velocityY += gravity;
+            player.y += player.velocityY;
+
+            // Collision avec le sol
+            if (player.y >= groundY - player.height) {
+                player.y = groundY - player.height;
+                player.velocityY = 0;
+                player.jumping = false;
+                player.rotation = 0;
+            }
+
+            // Rotation du joueur
+            if (player.jumping) {
+                player.rotation += 8;
+            }
+
+            // Distance
+            distance += gameSpeed / 20;
+            document.getElementById('distance').textContent = Math.floor(distance) + 'm';
+
+            // Augmenter la difficulté progressivement
+            if (frameCount % 300 === 0) {
+                gameSpeed += 0.2;
+                if (obstacleSpawnRate > 50) obstacleSpawnRate -= 2;
+            }
+
+            // Spawner obstacles
+            if (frameCount % obstacleSpawnRate === 0) {
+                spawnObstacle();
+            }
+
+            // Spawner gemmes
+            if (frameCount % 150 === 0 && Math.random() < 0.5) {
+                spawnGem();
+            }
+
+            // Mettre à jour obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].x -= gameSpeed;
+                
+                if (obstacles[i].x + obstacles[i].width < 0) {
+                    obstacles.splice(i, 1);
+                    combo++;
+                }
+            }
+
+            // Mettre à jour gemmes
+            for (let i = gems.length - 1; i >= 0; i--) {
+                gems[i].x -= gameSpeed;
+                gems[i].rotation += 5;
+                
+                if (gems[i].x + gems[i].size < 0) {
+                    gems.splice(i, 1);
+                }
+            }
+
+            // Mettre à jour particules
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].x += particles[i].vx;
+                particles[i].y += particles[i].vy;
+                particles[i].life--;
+                
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            // Vérifier collisions obstacles
+            for (let obstacle of obstacles) {
+                if (checkCollision(player, obstacle)) {
+                    gameOver();
+                    return;
+                }
+            }
+
+            // Vérifier collisions gemmes
+            for (let i = gems.length - 1; i >= 0; i--) {
+                if (checkCollision(player, gems[i])) {
+                    gemsCollected++;
+                    createParticles(gems[i].x, gems[i].y, '#00ff88');
+                    gems.splice(i, 1);
+                }
+            }
+
+            draw();
+            gameLoop = requestAnimationFrame(update);
+        }
+
+        function spawnObstacle() {
+            const height = 40 + Math.random() * 40;
+            obstacles.push({
+                x: canvas.width,
+                y: groundY - height,
+                width: 30,
+                height: height
+            });
+        }
+
+        function spawnGem() {
+            gems.push({
+                x: canvas.width,
+                y: groundY - 100 - Math.random() * 150,
+                size: 20,
+                rotation: 0
+            });
+        }
+
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + (rect2.width || rect2.size) &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + (rect2.height || rect2.size) &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 10; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 5,
+                    vy: (Math.random() - 0.5) * 5,
+                    life: 30,
+                    color: color
+                });
+            }
+        }
+
+        function draw() {
+            // Background animé
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, '#0f051a');
+            gradient.addColorStop(1, '#1a0b2e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Grille néon qui défile
+            ctx.strokeStyle = 'rgba(188, 19, 254, 0.15)';
+            ctx.lineWidth = 1;
+            const gridOffset = (frameCount * gameSpeed) % 40;
+            for (let i = -1; i < canvas.width / 40 + 1; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * 40 - gridOffset, 0);
+                ctx.lineTo(i * 40 - gridOffset, canvas.height);
+                ctx.stroke();
+            }
+
+            // Sol néon
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#bc13fe';
+            ctx.strokeStyle = '#bc13fe';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, groundY);
+            ctx.lineTo(canvas.width, groundY);
+            ctx.stroke();
+
+            // Particules
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life / 30;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, 4, 4);
+            });
+            ctx.globalAlpha = 1;
+
+            // Obstacles (pics néon)
+            obstacles.forEach(obs => {
+                ctx.shadowBlur = 30;
+                ctx.shadowColor = '#ff006e';
+                ctx.fillStyle = '#ff006e';
+                
+                // Dessiner des pics
+                ctx.beginPath();
+                for (let i = 0; i < obs.width; i += 10) {
+                    ctx.moveTo(obs.x + i, obs.y + obs.height);
+                    ctx.lineTo(obs.x + i + 5, obs.y);
+                    ctx.lineTo(obs.x + i + 10, obs.y + obs.height);
+                }
+                ctx.closePath();
+                ctx.fill();
+            });
+
+            // Gemmes
+            gems.forEach(gem => {
+                ctx.save();
+                ctx.translate(gem.x + gem.size / 2, gem.y + gem.size / 2);
+                ctx.rotate((gem.rotation * Math.PI) / 180);
+                
+                ctx.shadowBlur = 25;
+                ctx.shadowColor = '#00ff88';
+                ctx.fillStyle = '#00ff88';
+                
+                ctx.beginPath();
+                ctx.moveTo(0, -gem.size / 2);
+                ctx.lineTo(gem.size / 2, 0);
+                ctx.lineTo(0, gem.size / 2);
+                ctx.lineTo(-gem.size / 2, 0);
+                ctx.closePath();
+                ctx.fill();
+                
+                ctx.restore();
+            });
+
+            // Joueur (cube néon rotatif)
+            ctx.save();
+            ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
+            ctx.rotate((player.rotation * Math.PI) / 180);
+
+            const playerGradient = ctx.createLinearGradient(-player.width / 2, -player.height / 2, player.width / 2, player.height / 2);
+            playerGradient.addColorStop(0, '#bc13fe');
+            playerGradient.addColorStop(1, '#ff006e');
+            
+            ctx.shadowBlur = 40;
+            ctx.shadowColor = '#bc13fe';
+            ctx.fillStyle = playerGradient;
+            ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
+            
+            ctx.restore();
+
+            // HUD Combo
+            if (combo > 0) {
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#00ff88';
+                ctx.font = 'bold 20px Orbitron';
+                ctx.fillText('COMBO: x' + combo, 20, 30);
+            }
+
+            ctx.shadowBlur = 0;
+        }
+
+        function gameOver() {
+            cancelAnimationFrame(gameLoop);
+            gameLoop = null;
+            
+            const finalScore = Math.floor(distance) + gemsCollected * 10;
+            
+            if (finalScore > bestDistance) {
+                bestDistance = finalScore;
+                localStorage.setItem('voidDashBest', bestDistance);
+                document.getElementById('bestDistance').textContent = Math.floor(bestDistance) + 'm';
+            }
+
+            document.getElementById('finalDistance').textContent = Math.floor(distance) + 'm';
+            document.getElementById('finalGems').textContent = gemsCollected;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        // Initialisation
+        draw();
+    </script>
+</body>
+</html>

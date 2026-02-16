@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Pluie Relaxante</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#0a1a2a;}
+canvas{display:block}
+#hint{position:fixed;bottom:10px;width:100%;text-align:center;color:#9fd3ff;font-family:sans-serif;opacity:.7}
+</style>
+</head>
+<body>
+<audio id="rainSound" loop autoplay>
+  <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_1c3f8c8d8b.mp3?filename=rain-ambient-110397.mp3" type="audio/mpeg">
+</audio>
+<canvas id="c"></canvas>
+<div id="hint">Clique pour créer des ondes dans l'eau 💧</div>
+<script>
+const canvas = document.getElementById('c');
+const rainSound = document.getElementById('rainSound');
+window.addEventListener('click',()=>{rainSound.play();},{once:true});
+const ctx = canvas.getContext('2d');
+let w,h;
+function resize(){w=canvas.width=window.innerWidth;h=canvas.height=window.innerHeight}
+window.addEventListener('resize',resize);resize();
+
+const drops=[];
+const ripples=[];
+
+class Drop{
+  constructor(){this.reset()}
+  reset(){this.x=Math.random()*w;this.y=Math.random()*-h;this.v=2+Math.random()*4}
+  update(){this.y+=this.v;if(this.y>h){this.reset()}}
+  draw(){ctx.strokeStyle='rgba(180,220,255,.5)';ctx.beginPath();ctx.moveTo(this.x,this.y);ctx.lineTo(this.x,this.y+10);ctx.stroke()}
+}
+
+class Ripple{
+  constructor(x,y){this.x=x;this.y=y;this.r=0;this.a=1}
+  update(){this.r+=1.5;this.a-=0.008}
+  draw(){ctx.strokeStyle=`rgba(150,200,255,${this.a})`;ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.stroke()}
+}
+
+for(let i=0;i<200;i++)drops.push(new Drop());
+
+canvas.addEventListener('click',e=>{
+  ripples.push(new Ripple(e.clientX,e.clientY));
+});
+
+function loop(){
+  ctx.fillStyle='rgba(10,26,42,.3)';ctx.fillRect(0,0,w,h);
+  drops.forEach(d=>{d.update();d.draw()});
+  for(let i=ripples.length-1;i>=0;i--){
+    const r=ripples[i];r.update();r.draw();
+    if(r.a<=0)ripples.splice(i,1);
+  }
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

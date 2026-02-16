@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survival.io - Édition Complète</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            overflow: hidden;
+            background: #0a0a0a;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #gameCanvas {
+            display: block;
+        }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            z-index: 10;
+        }
+        .stat-box {
+            background: rgba(0,0,0,0.7);
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border: 2px solid rgba(0,255,136,0.3);
+            backdrop-filter: blur(10px);
+        }
+        .stat-label {
+            color: #00ff88;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+        }
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        #startScreen h1 {
+            color: #00ff88;
+            font-size: 64px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 30px rgba(0,255,136,0.7);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        #startScreen .subtitle {
+            color: #aaa;
+            font-size: 18px;
+            margin-bottom: 40px;
+        }
+        #startScreen input {
+            padding: 15px 30px;
+            font-size: 20px;
+            border: 2px solid #00ff88;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            width: 350px;
+            transition: all 0.3s;
+        }
+        #startScreen input:focus {
+            outline: none;
+            box-shadow: 0 0 20px rgba(0,255,136,0.5);
+            transform: scale(1.05);
+        }
+        .skin-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .skin-option {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .skin-option:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+        .skin-option.selected {
+            border-color: white;
+            box-shadow: 0 0 30px rgba(255,255,255,0.8);
+        }
+        #startBtn {
+            padding: 18px 60px;
+            font-size: 26px;
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #000;
+            font-weight: bold;
+            box-shadow: 0 5px 25px rgba(0,255,136,0.4);
+        }
+        #startBtn:hover {
+            background: linear-gradient(135deg, #00cc6a, #00aa55);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0,255,136,0.6);
+        }
+        .controls {
+            color: #888;
+            margin-top: 30px;
+            text-align: center;
+        }
+        .controls p {
+            margin: 8px 0;
+            font-size: 16px;
+        }
+        #gameOver {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            padding: 50px;
+            border-radius: 25px;
+            text-align: center;
+            z-index: 100;
+            border: 3px solid #ff4444;
+            min-width: 400px;
+        }
+        #gameOver h2 {
+            color: #ff4444;
+            font-size: 56px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255,68,68,0.8);
+        }
+        #gameOver .stats {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        #gameOver .stats p {
+            color: white;
+            font-size: 22px;
+            margin: 10px 0;
+        }
+        #gameOver button {
+            padding: 15px 50px;
+            font-size: 22px;
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            color: #000;
+            font-weight: bold;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        #gameOver button:hover {
+            transform: scale(1.05);
+        }
+        .leaderboard {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 15px;
+            color: white;
+            min-width: 250px;
+            border: 2px solid rgba(0,255,136,0.3);
+            backdrop-filter: blur(10px);
+        }
+        .leaderboard h3 {
+            color: #00ff88;
+            margin-bottom: 15px;
+            font-size: 20px;
+            text-align: center;
+        }
+        .leaderboard ol {
+            list-style: none;
+            padding: 0;
+        }
+        .leaderboard li {
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .leaderboard li.player {
+            background: rgba(0,255,136,0.2);
+            border: 1px solid #00ff88;
+        }
+        .minimap {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 200px;
+            background: rgba(0,0,0,0.8);
+            border: 2px solid rgba(0,255,136,0.3);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        .abilities {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .ability-btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(0,0,0,0.8);
+            border: 2px solid rgba(0,255,136,0.5);
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+        .ability-btn:hover:not(.cooldown) {
+            background: rgba(0,255,136,0.3);
+            transform: scale(1.1);
+        }
+        .ability-btn span {
+            font-size: 10px;
+            margin-top: 5px;
+        }
+        #fps {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #888;
+            font-size: 14px;
+        }
+        .notification {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: #00ff88;
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            border: 2px solid #00ff88;
+            animation: fadeInOut 2s forwards;
+            pointer-events: none;
+            z-index: 50;
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui">
+        <div class="stat-box">
+            <div class="stat-label">⚖️ MASSE</div>
+            <div class="stat-value" id="score">10</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">🍴 MANGÉS</div>
+            <div class="stat-value" id="eaten">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">⏱️ TEMPS</div>
+            <div class="stat-value" id="time">0:00</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">🏆 MEILLEUR</div>
+            <div class="stat-value" id="bestScore">0</div>
+        </div>
+    </div>
+    
+    <div id="fps"></div>
+    
+    <div class="leaderboard">
+        <h3>🏆 CLASSEMENT</h3>
+        <ol id="leaderboard"></ol>
+    </div>
+    
+    <canvas class="minimap" id="minimap"></canvas>
+    
+    <div class="abilities">
+        <div class="ability-btn" id="splitBtn" title="Division (ESPACE)">
+            ✂️<span>SPLIT</span>
+        </div>
+        <div class="ability-btn" id="boostBtn" title="Boost (W)">
+            ⚡<span>BOOST</span>
+        </div>
+    </div>
+    
+    <div id="startScreen">
+        <h1>🎮 SURVIVAL.IO</h1>
+        <p class="subtitle">Mangez, Grandissez, Survivez !</p>
+        <input type="text" id="playerName" placeholder="Entrez votre nom" maxlength="15" value="Joueur">
+        
+        <p style="color: white; margin: 20px 0 10px 0;">Choisissez votre skin :</p>
+        <div class="skin-selector">
+            <div class="skin-option selected" data-skin="0" style="background: linear-gradient(135deg, #00ff88, #00cc6a);"></div>
+            <div class="skin-option" data-skin="1" style="background: linear-gradient(135deg, #ff6b6b, #ee5a6f);"></div>
+            <div class="skin-option" data-skin="2" style="background: linear-gradient(135deg, #4ecdc4, #44a08d);"></div>
+            <div class="skin-option" data-skin="3" style="background: linear-gradient(135deg, #f7b731, #f59842);"></div>
+            <div class="skin-option" data-skin="4" style="background: linear-gradient(135deg, #a29bfe, #6c5ce7);"></div>
+            <div class="skin-option" data-skin="5" style="background: linear-gradient(135deg, #fd79a8, #e84393);"></div>
+        </div>
+        
+        <button id="startBtn">▶ JOUER</button>
+        
+        <div class="controls">
+            <p><strong>🖱️ Souris</strong> - Se déplacer</p>
+            <p><strong>ESPACE</strong> - Diviser en deux</p>
+            <p><strong>W</strong> - Boost de vitesse</p>
+            <p><strong>ESC</strong> - Pause</p>
+        </div>
+    </div>
+    
+    <div id="gameOver">
+        <h2>💀 GAME OVER</h2>
+        <div class="stats">
+            <p>📊 Masse finale: <strong id="finalScore"></strong></p>
+            <p>🍴 Total mangé: <strong id="finalEaten"></strong></p>
+            <p>⏱️ Temps survécu: <strong id="finalTime"></strong></p>
+            <p>🏆 Rang final: <strong id="finalRank"></strong></p>
+        </div>
+        <button id="restartBtn">🔄 REJOUER</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const minimapCanvas = document.getElementById('minimap');
+        const minimapCtx = minimapCanvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        minimapCanvas.width = 200;
+        minimapCanvas.height = 200;
+        
+        const WORLD_SIZE = 4000;
+        const GRID_SIZE = 50;
+        
+        let gameRunning = false;
+        let gamePaused = false;
+        let player = null;
+        let playerCells = [];
+        let food = [];
+        let bots = [];
+        let viruses = [];
+        let particles = [];
+        let camera = { x: 0, y: 0 };
+        let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+        let eatenCount = 0;
+        let gameTime = 0;
+        let lastTime = Date.now();
+        let fps = 0;
+        let frameCount = 0;
+        let lastFpsUpdate = Date.now();
+        let selectedSkin = 0;
+        let bestScore = parseInt(localStorage.getItem('bestScore')) || 0;
+        
+        const skins = [
+            { gradient: ['#00ff88', '#00cc6a'] },
+            { gradient: ['#ff6b6b', '#ee5a6f'] },
+            { gradient: ['#4ecdc4', '#44a08d'] },
+            { gradient: ['#f7b731', '#f59842'] },
+            { gradient: ['#a29bfe', '#6c5ce7'] },
+            { gradient: ['#fd79a8', '#e84393'] }
+        ];
+        
+        // Sélection des skins
+        document.querySelectorAll('.skin-option').forEach(el => {
+            el.addEventListener('click', function() {
+                document.querySelectorAll('.skin-option').forEach(e => e.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedSkin = parseInt(this.dataset.skin);
+            });
+        });
+        
+        class Cell {
+            constructor(x, y, radius, skinIndex, name = '', isPlayer = false) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.skinIndex = skinIndex;
+                this.name = name;
+                this.vx = 0;
+                this.vy = 0;
+                this.isPlayer = isPlayer;
+            }
+            
+            draw() {
+                const screenX = this.x - camera.x;
+                const screenY = this.y - camera.y;
+                
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, this.radius, 0, Math.PI * 2);
+                
+                if (this.isPlayer && skins[this.skinIndex]) {
+                    const skin = skins[this.skinIndex];
+                    const grad = ctx.createRadialGradient(
+                        screenX - this.radius/3, screenY - this.radius/3, 0,
+                        screenX, screenY, this.radius
+                    );
+                    grad.addColorStop(0, skin.gradient[0]);
+                    grad.addColorStop(1, skin.gradient[1]);
+                    ctx.fillStyle = grad;
+                } else if (typeof this.skinIndex === 'string') {
+                    ctx.fillStyle = this.skinIndex;
+                } else {
+                    ctx.fillStyle = `hsl(${this.skinIndex * 30}, 70%, 55%)`;
+                }
+                
+                ctx.fill();
+                
+                ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+                ctx.lineWidth = Math.max(2, this.radius / 15);
+                ctx.stroke();
+                
+                // Reflet
+                ctx.beginPath();
+                ctx.arc(screenX - this.radius/4, screenY - this.radius/4, this.radius/8, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                ctx.fill();
+                
+                if (this.name && this.radius > 15) {
+                    ctx.fillStyle = 'white';
+                    ctx.font = `bold ${Math.max(12, this.radius / 3)}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.strokeStyle = 'black';
+                    ctx.lineWidth = 3;
+                    ctx.strokeText(this.name, screenX, screenY + 5);
+                    ctx.fillText(this.name, screenX, screenY + 5);
+                    
+                    ctx.font = `${Math.max(10, this.radius / 4)}px Arial`;
+                    ctx.strokeText(Math.floor(this.radius), screenX, screenY + this.radius/3 + 15);
+                    ctx.fillText(Math.floor(this.radius), screenX, screenY + this.radius/3 + 15);
+                }
+                
+                ctx.restore();
+            }
+            
+            get mass() {
+                return this.radius * this.radius / 100;
+            }
+        }
+        
+        class Virus {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 40;
+                this.spikes = 15;
+            }
+            
+            draw() {
+                const screenX = this.x - camera.x;
+                const screenY = this.y - camera.y;
+                
+                ctx.save();
+                ctx.beginPath();
+                for (let i = 0; i < this.spikes * 2; i++) {
+                    const angle = (Math.PI * 2 * i) / (this.spikes * 2);
+                    const r = i % 2 === 0 ? this.radius : this.radius * 0.7;
+                    const x = screenX + Math.cos(angle) * r;
+                    const y = screenY + Math.sin(angle) * r;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.fillStyle = '#00ff00';
+                ctx.fill();
+                ctx.strokeStyle = '#00aa00';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+        
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8;
+                this.life = 1;
+                this.color = color;
+                this.size = Math.random() * 5 + 3;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.2;
+                this.life -= 0.02;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x - camera.x, this.y - camera.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+        
+        function createFood() {
+            food = [];
+            for (let i = 0; i < 500; i++) {
+                food.push(new Cell(
+                    Math.random() * WORLD_SIZE,
+                    Math.random() * WORLD_SIZE,
+                    5,
+                    `hsl(${Math.random() * 360}, 80%, 60%)`
+                ));
+            }
+        }
+        
+        function createBots() {
+            bots = [];
+            const botNames = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Omega', 'Zeta', 'Sigma', 'Titan', 'Nova', 'Apex', 'Vortex', 'Nexus', 'Echo', 'Phantom', 'Chaos'];
+            for (let i = 0; i < 15; i++) {
+                const name = botNames[Math.floor(Math.random() * botNames.length)];
+                bots.push(new Cell(
+                    Math.random() * WORLD_SIZE,
+                    Math.random() * WORLD_SIZE,
+                    20 + Math.random() * 30,
+                    Math.floor(Math.random() * 12),
+                    name,
+                    false
+                ));
+            }
+        }
+        
+        function createViruses() {
+            viruses = [];
+            for (let i = 0; i < 20; i++) {
+                viruses.push(new Virus(
+                    Math.random() * WORLD_SIZE,
+                    Math.random() * WORLD_SIZE
+                ));
+            }
+        }
+        
+        function startGame() {
+            const name = document.getElementById('playerName').value || 'Joueur';
+            player = new Cell(
+                WORLD_SIZE / 2,
+                WORLD_SIZE / 2,
+                20,
+                selectedSkin,
+                name,
+                true
+            );
+            playerCells = [player];
+            
+            createFood();
+            createBots();
+            createViruses();
+            
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('bestScore').textContent = bestScore;
+            gameRunning = true;
+            gameTime = 0;
+            eatenCount = 0;
+            lastTime = Date.now();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function updateCamera() {
+            let totalX = 0, totalY = 0, totalMass = 0;
+            playerCells.forEach(cell => {
+                const mass = cell.mass;
+                totalX += cell.x * mass;
+                totalY += cell.y * mass;
+                totalMass += mass;
+            });
+            
+            const centerX = totalX / totalMass;
+            const centerY = totalY / totalMass;
+            
+            camera.x += (centerX - canvas.width / 2 - camera.x) * 0.1;
+            camera.y += (centerY - canvas.height / 2 - camera.y) * 0.1;
+            
+            camera.x = Math.max(0, Math.min(WORLD_SIZE - canvas.width, camera.x));
+            camera.y = Math.max(0, Math.min(WORLD_SIZE - canvas.height, camera.y));
+        }
+        
+        function updatePlayer() {
+            playerCells.forEach(cell => {
+                const dx = mouse.x + camera.x - cell.x;
+                const dy = mouse.y + camera.y - cell.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist > 10) {
+                    const speed = Math.max(1.5, 6 - cell.radius / 15);
+                    cell.vx = (dx / dist) * speed;
+                    cell.vy = (dy / dist) * speed;
+                }
+                
+                cell.x += cell.vx;
+                cell.y += cell.vy;
+                
+                cell.x = Math.max(cell.radius, Math.min(WORLD_SIZE - cell.radius, cell.x));
+                cell.y = Math.max(cell.radius, Math.min(WORLD_SIZE - cell.radius, cell.y));
+                
+                cell.vx *= 0.88;
+                cell.vy *= 0.88;
+            });
+            
+            for (let i = 0; i < playerCells.length; i++) {
+                for (let j = i + 1; j < playerCells.length; j++) {
+                    const c1 = playerCells[i];
+                    const c2 = playerCells[j];
+                    const dist = Math.hypot(c1.x - c2.x, c1.y - c2.y);
+                    
+                    if (dist < c1.radius + c2.radius) {
+                        const angle = Math.atan2(c2.y - c1.y, c2.x - c1.x);
+                        const overlap = c1.radius + c2.radius - dist;
+                        c1.x -= Math.cos(angle) * overlap / 2;
+                        c1.y -= Math.sin(angle) * overlap / 2;
+                        c2.x += Math.cos(angle) * overlap / 2;
+                        c2.y += Math.sin(angle) * overlap / 2;
+                    }
+                }
+            }
+        }
+        
+        function updateBots() {
+            bots.forEach(bot => {
+                let targetX = bot.x;
+                let targetY = bot.y;
+                let minDist = Infinity;
+                
+                food.forEach(f => {
+                    const dist = Math.hypot(f.x - bot.x, f.y - bot.y);
+                    if (dist < minDist && dist < 300) {
+                        minDist = dist;
+                        targetX = f.x;
+                        targetY = f.y;
+                    }
+                });
+                
+                playerCells.forEach(pc => {
+                    const dist = Math.hypot(pc.x - bot.x, pc.y - bot.y);
+                    if (pc.radius > bot.radius * 1.2 && dist < 400) {
+                        const angle = Math.atan2(bot.y - pc.y, bot.x - pc.x);
+                        targetX = bot.x + Math.cos(angle) * 200;
+                        targetY = bot.y + Math.sin(angle) * 200;
+                    } else if (pc.radius < bot.radius * 0.7 && dist < 300) {
+                        targetX = pc.x;
+                        targetY = pc.y;
+                    }
+                });
+                
+                if (Math.random() < 0.008) {
+                    targetX = bot.x + (Math.random() - 0.5) * 400;
+                    targetY = bot.y + (Math.random() - 0.5) * 400;
+                }
+                
+                const dx = targetX - bot.x;
+                const dy = targetY - bot.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist > 5) {
+                    const speed = Math.max(1.2, 5 - bot.radius / 20);
+                    bot.vx = (dx / dist) * speed;
+                    bot.vy = (dy / dist) * speed;
+                }
+                
+                bot.x += bot.vx;
+                bot.y += bot.vy;
+                
+                bot.x = Math.max(bot.radius, Math.min(WORLD_SIZE - bot.radius, bot.x));
+                bot.y = Math.max(bot.radius, Math.min(WORLD_SIZE - bot.radius, bot.y));
+                
+                bot.vx *= 0.9;
+                bot.vy *= 0.9;
+            });
+        }
+        
+        function checkCollisions() {
+            food = food.filter(f => {
+                for (let cell of playerCells) {
+                    const dist = Math.hypot(f.x - cell.x, f.y - cell.y);
+                    if (dist < cell.radius) {
+                        cell.radius += 0.4;
+                        eatenCount++;
+                        createParticles(f.x, f.y, typeof f.skinIndex === 'string' ? f.skinIndex : '#ffffff', 3);
+                        return false;
+                    }
+                }
+                return true;
+            });
+            
+            bots = bots.filter(bot => {
+                for (let cell of playerCells) {
+                    const dist = Math.hypot(bot.x - cell.x, bot.y - cell.y);
+                    if (dist < cell.radius && bot.radius < cell.radius * 0.75) {
+                        cell.radius += bot.radius * 0.25;
+                        eatenCount++;
+                        createParticles(bot.x, bot.y, `hsl(${bot.skinIndex * 30}, 70%, 55%)`, 8);
+                        showNotification(`+${Math.floor(bot.radius)} 🎯`);
+                        return false;
+                    } else if (dist < bot.radius && cell.radius < bot.radius * 0.75) {
+                        gameOver();
+                        return true;
+                    }
+                }
+                return true;
+            });
+            
+            bots.forEach(bot => {
+                food = food.filter(f => {
+                    const dist = Math.hypot(f.x - bot.x, f.y - bot.y);
+                    if (dist < bot.radius) {
+                        bot.radius += 0.3;
+                        return false;
+                    }
+                    return true;
+                });
+            });
+            
+            for (let i = 0; i < bots.length; i++) {
+                for (let j = i + 1; j < bots.length; j++) {
+                    const dist = Math.hypot(bots[i].x - bots[j].x, bots[i].y - bots[j].y);
+                    if (dist < bots[i].radius && bots[j].radius < bots[i].radius * 0.75) {
+                        bots[i].radius += bots[j].radius * 0.25;
+                        bots.splice(j, 1);
+                        j--;
+                    } else if (dist < bots[j].radius && bots[i].radius < bots[j].radius * 0.75) {
+                        bots[j].radius += bots[i].radius * 0.25;
+                        bots.splice(i, 1);
+                        i--;
+                        break;
+                    }
+                }
+            }
+            
+            playerCells.forEach(cell => {
+                viruses.forEach(v => {
+                    const dist = Math.hypot(cell.x - v.x, cell.y - v.y);
+                    if (dist < cell.radius + v.radius && cell.radius > v.radius * 1.2) {
+                        splitCell(cell);
+                        createParticles(v.x, v.y, '#00ff00', 15);
+                    }
+                });
+            });
+            
+            while (food.length < 500) {
+                food.push(new Cell(
+                    Math.random() * WORLD_SIZE,
+                    Math.random() * WORLD_SIZE,
+                    5,
+                    `hsl(${Math.random() * 360}, 80%, 60%)`
+                ));
+            }
+            
+            while (bots.length < 15) {
+                const botNames = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Omega', 'Zeta', 'Sigma', 'Titan', 'Nova', 'Apex'];
+                const name = botNames[Math.floor(Math.random() * botNames.length)];
+                bots.push(new Cell(
+                    Math.random() * WORLD_SIZE,
+                    Math.random() * WORLD_SIZE,
+                    20 + Math.random() * 25,
+                    Math.floor(Math.random() * 12),
+                    name,
+                    false
+                ));
+            }
+        }
+        
+        function createParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+        
+        function updateParticles() {
+            particles = particles.filter(p => {
+                p.update();
+                return p.life > 0;
+            });
+        }
+        
+        function splitCell(cell) {
+            if (playerCells.length >= 16 || cell.radius < 30) return;
+            
+            const angle = Math.atan2(mouse.y + camera.y - cell.y, mouse.x + camera.x - cell.x);
+            const newRadius = cell.radius / Math.sqrt(2);
+            
+            const newCell = new Cell(
+                cell.x + Math.cos(angle) * cell.radius,
+                cell.y + Math.sin(angle) * cell.radius,
+                newRadius,
+                cell.skinIndex,
+                cell.name,
+                true
+            );
+            
+            newCell.vx = Math.cos(angle) * 25;
+            newCell.vy = Math.sin(angle) * 25;
+            
+            cell.radius = newRadius;
+            cell.vx = -Math.cos(angle) * 5;
+            cell.vy = -Math.sin(angle) * 5;
+            
+            playerCells.push(newCell);
+            showNotification('✂️ SPLIT!');
+        }
+        
+        function boostCell() {
+            if (player.radius < 25) return;
+            
+            playerCells.forEach(cell => {
+                if (cell.radius < 25) return;
+                
+                const angle = Math.atan2(mouse.y + camera.y - cell.y, mouse.x + camera.x - cell.x);
+                
+                const ejectMass = new Cell(
+                    cell.x + Math.cos(angle) * cell.radius,
+                    cell.y + Math.sin(angle) * cell.radius,
+                    8,
+                    '#ffffff'
+                );
+                ejectMass.vx = Math.cos(angle) * 30;
+                ejectMass.vy = Math.sin(angle) * 30;
+                
+                food.push(ejectMass);
+                cell.radius -= 1;
+                
+                cell.vx = Math.cos(angle) * 10;
+                cell.vy = Math.sin(angle) * 10;
+            });
+            
+            showNotification('⚡ BOOST!');
+        }
+        
+        function mergePlayerCells() {
+            if (playerCells.length <= 1) return;
+            
+            for (let i = 0; i < playerCells.length; i++) {
+                for (let j = i + 1; j < playerCells.length; j++) {
+                    const c1 = playerCells[i];
+                    const c2 = playerCells[j];
+                    const dist = Math.hypot(c1.x - c2.x, c1.y - c2.y);
+                    
+                    if (dist < (c1.radius + c2.radius) / 2) {
+                        c1.radius = Math.sqrt(c1.radius * c1.radius + c2.radius * c2.radius);
+                        playerCells.splice(j, 1);
+                        j--;
+                    }
+                }
+            }
+        }
+        
+        function drawGrid() {
+            ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+            ctx.lineWidth = 1;
+            
+            const startX = Math.floor(camera.x / GRID_SIZE) * GRID_SIZE;
+            const startY = Math.floor(camera.y / GRID_SIZE) * GRID_SIZE;
+            
+            for (let x = startX; x < camera.x + canvas.width; x += GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(x - camera.x, 0);
+                ctx.lineTo(x - camera.x, canvas.height);
+                ctx.stroke();
+            }
+            
+            for (let y = startY; y < camera.y + canvas.height; y += GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(0, y - camera.y);
+                ctx.lineTo(canvas.width, y - camera.y);
+                ctx.stroke();
+            }
+        }
+        
+        function drawMinimap() {
+            minimapCtx.fillStyle = 'rgba(0,0,0,0.8)';
+            minimapCtx.fillRect(0, 0, 200, 200);
+            
+            const scale = 200 / WORLD_SIZE;
+            
+            playerCells.forEach(cell => {
+                minimapCtx.fillStyle = '#00ff88';
+                minimapCtx.beginPath();
+                minimapCtx.arc(cell.x * scale, cell.y * scale, Math.max(2, cell.radius * scale), 0, Math.PI * 2);
+                minimapCtx.fill();
+            });
+            
+            bots.forEach(bot => {
+                minimapCtx.fillStyle = '#ff4444';
+                minimapCtx.beginPath();
+                minimapCtx.arc(bot.x * scale, bot.y * scale, Math.max(2, bot.radius * scale * 0.8), 0, Math.PI * 2);
+                minimapCtx.fill();
+            });
+            
+            viruses.forEach(v => {
+                minimapCtx.fillStyle = '#00ff00';
+                minimapCtx.beginPath();
+                minimapCtx.arc(v.x * scale, v.y * scale, 3, 0, Math.PI * 2);
+                minimapCtx.fill();
+            });
+            
+            minimapCtx.strokeStyle = 'rgba(0,255,136,0.5)';
+            minimapCtx.lineWidth = 2;
+            minimapCtx.strokeRect(0, 0, 200, 200);
+        }
+        
+        function updateLeaderboard() {
+            const all = [...playerCells, ...bots].sort((a, b) => b.radius - a.radius).slice(0, 10);
+            const lb = document.getElementById('leaderboard');
+            lb.innerHTML = all.map((e, i) => {
+                const isPlayer = playerCells.includes(e);
+                return `<li class="${isPlayer ? 'player' : ''}">
+                    <span>${i + 1}. ${e.name}</span>
+                    <span>${Math.floor(e.radius)}</span>
+                </li>`;
+            }).join('');
+        }
+        
+        function showNotification(text) {
+            const notif = document.createElement('div');
+            notif.className = 'notification';
+            notif.textContent = text;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 2000);
+        }
+        
+        function updateTime() {
+            const now = Date.now();
+            const delta = (now - lastTime) / 1000;
+            gameTime += delta;
+            lastTime = now;
+            
+            const minutes = Math.floor(gameTime / 60);
+            const seconds = Math.floor(gameTime % 60);
+            document.getElementById('time').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        function updateFPS() {
+            frameCount++;
+            const now = Date.now();
+            if (now - lastFpsUpdate >= 1000) {
+                fps = frameCount;
+                frameCount = 0;
+                lastFpsUpdate = now;
+                document.getElementById('fps').textContent = `FPS: ${fps}`;
+            }
+        }
+        
+        function gameLoop() {
+            if (!gameRunning || gamePaused) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            drawGrid();
+            
+            updatePlayer();
+            updateBots();
+            checkCollisions();
+            mergePlayerCells();
+            updateParticles();
+            updateCamera();
+            updateTime();
+            updateFPS();
+            
+            food.forEach(f => f.draw());
+            viruses.forEach(v => v.draw());
+            bots.forEach(b => b.draw());
+            playerCells.forEach(p => p.draw());
+            particles.forEach(p => p.draw());
+            
+            const totalMass = playerCells.reduce((sum, c) => sum + c.radius, 0);
+            document.getElementById('score').textContent = Math.floor(totalMass);
+            document.getElementById('eaten').textContent = eatenCount;
+            
+            if (totalMass > bestScore) {
+                bestScore = Math.floor(totalMass);
+                localStorage.setItem('bestScore', bestScore);
+                document.getElementById('bestScore').textContent = bestScore;
+            }
+            
+            updateLeaderboard();
+            drawMinimap();
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function gameOver() {
+            gameRunning = false;
+            
+            const totalMass = playerCells.reduce((sum, c) => sum + c.radius, 0);
+            const all = [...playerCells, ...bots].sort((a, b) => b.radius - a.radius);
+            const rank = all.findIndex(e => playerCells.includes(e)) + 1;
+            
+            document.getElementById('finalScore').textContent = Math.floor(totalMass);
+            document.getElementById('finalEaten').textContent = eatenCount;
+            const minutes = Math.floor(gameTime / 60);
+            const seconds = Math.floor(gameTime % 60);
+            document.getElementById('finalTime').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            document.getElementById('finalRank').textContent = `#${rank}`;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+        
+        // Event Listeners
+        canvas.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
+            
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (playerCells.length > 0) splitCell(playerCells[0]);
+            }
+            if (e.code === 'KeyW') {
+                e.preventDefault();
+                boostCell();
+            }
+            if (e.code === 'Escape') {
+                gamePaused = !gamePaused;
+                if (!gamePaused && gameRunning) requestAnimationFrame(gameLoop);
+            }
+        });
+        
+        document.getElementById('splitBtn').addEventListener('click', () => {
+            if (playerCells.length > 0 && gameRunning) splitCell(playerCells[0]);
+        });
+        
+        document.getElementById('boostBtn').addEventListener('click', () => {
+            if (gameRunning) boostCell();
+        });
+        
+        document.getElementById('startBtn').addEventListener('click', () => {
+            startGame();
+        });
+        
+        document.getElementById('restartBtn').addEventListener('click', () => {
+            location.reload();
+        });
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
